@@ -1,12 +1,12 @@
 import pytest
-from mac_graph.manifest.schema import GraphManifest, NodeDefinition, EdgeDefinition
-from mac_graph.manifest.loader import load_manifest_from_yaml
-from mac_graph.adapters import (
+from graphin.manifest.schema import GraphManifest, NodeDefinition, EdgeDefinition
+from graphin.manifest.loader import load_manifest_from_yaml
+from graphin.adapters import (
     get_adapter_by_name,
     LangGraphAdapter,
     CrewAIAdapter,
     SemanticKernelAdapter,
-    YamlGraphAdapter,
+    GraphInYAMLAdapter,
 )
 
 
@@ -20,19 +20,17 @@ def test_adapter_factory():
     sk = get_adapter_by_name("semantic_kernel")
     assert isinstance(sk, SemanticKernelAdapter)
 
-    yg = get_adapter_by_name("yamlgraph")
-    assert isinstance(yg, YamlGraphAdapter)
+    gy = get_adapter_by_name("graphin_yaml")
+    assert isinstance(gy, GraphInYAMLAdapter)
 
 
 def test_langgraph_adapter_build_and_export():
-    manifest = load_manifest_from_yaml("manifest.yaml")
+    manifest = load_manifest_from_yaml("examples/stem_markdown_processor/stem_markdown_processor.graphin.yaml")
     adapter = LangGraphAdapter()
 
-    # Build executable StateGraph
     compiled_graph = adapter.build_executable(manifest)
     assert compiled_graph is not None
 
-    # Export compiled StateGraph back to GraphManifest
     exported_manifest = adapter.export_manifest(compiled_graph)
     assert isinstance(exported_manifest, GraphManifest)
     assert len(exported_manifest.nodes) > 0
@@ -47,12 +45,10 @@ def test_crewai_adapter_tool_and_acl_hooks():
 
     tool = adapter.get_tool_wrapper(manifest)
 
-    # Non-admin attempt to remove node should be DENIED by ACL hook
     res_denied = tool._run(action="remove_node", node_id="node_1", agent_role="user_agent")
     assert "ACL DENIED" in res_denied
     assert len(manifest.nodes) == 1
 
-    # Admin attempt to remove node should succeed
     res_allowed = tool._run(action="remove_node", node_id="node_1", agent_role="admin")
     assert "SUCCESS" in res_allowed
     assert len(manifest.nodes) == 0
@@ -67,12 +63,10 @@ def test_semantic_kernel_adapter_plugin_and_filter():
 
     plugin = adapter.get_tool_wrapper(manifest)
 
-    # Allowed action 'add_node'
     res_add = plugin.manipulate_graph(action="add_node", node_id="node_2", code_ref="m:f2")
     assert "SUCCESS" in res_add
     assert len(manifest.nodes) == 2
 
-    # Blocked action 'remove_node' not in allowed_actions filter
     res_blocked = plugin.manipulate_graph(action="remove_node", node_id="node_1")
     assert "ACL_DENIED" in res_blocked
     assert len(manifest.nodes) == 2

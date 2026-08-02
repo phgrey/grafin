@@ -1,7 +1,7 @@
 import json
 import pytest
-from mac_graph.hitl.adaptive_card import AdaptiveCardGenerator
-from mac_graph.hitl.dispatcher import HITLDispatcher
+from graphin.hitl.adaptive_card import AdaptiveCardGenerator
+from graphin.hitl.dispatcher import HITLDispatcher
 
 
 def test_adaptive_card_generator():

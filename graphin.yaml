@@ -1,0 +1,21 @@
+version: "0.1.0"
+metadata:
+  name: "graphin_default_workflow"
+  description: "GraphInYAML default manifest definition"
+  author: "graphin team"
+
+state_schema:
+  type: "object"
+  properties:
+    status_message: { type: "string" }
+
+nodes: []
+edges: []
+
+framework_configs:
+  langgraph:
+    checkpointer: "MemorySaver"
+  crewai:
+    verbose: true
+  semantic_kernel:
+    service_id: "default"

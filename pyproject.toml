@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mac-graph"
+name = "graphin"
 version = "0.1.0"
-description = "macOS desktop helper Python app for STEM document classification & semantic graph workflows"
+description = "GraphIn: Manifest-driven execution graph engine supporting LangGraph, CrewAI, and Semantic Kernel"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
@@ -27,7 +27,7 @@ dev = [
 ]
 
 [project.scripts]
-mac-graph = "mac_graph.cli:app"
+graphin = "graphin.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]

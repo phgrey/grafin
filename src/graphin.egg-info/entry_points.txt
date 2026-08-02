@@ -1,0 +1,2 @@
+[console_scripts]
+graphin = graphin.cli:app

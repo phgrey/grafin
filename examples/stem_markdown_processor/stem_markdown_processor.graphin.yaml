@@ -1,0 +1,85 @@
+version: "0.1.0"
+metadata:
+  name: "stem_markdown_processor"
+  description: "GraphInYAML manifest for STEM markdown document chunking, taxonomy classification, and HITL verification"
+  author: "graphin team"
+
+state_schema:
+  type: "object"
+  properties:
+    source_files:
+      type: "array"
+      items: { type: "string" }
+    documents:
+      type: "array"
+    chunks:
+      type: "array"
+    classified_chunks:
+      type: "array"
+    pending_reviews:
+      type: "array"
+    status_message:
+      type: "string"
+
+nodes:
+  - id: "load_documents"
+    type: "function"
+    code_ref: "examples.stem_markdown_processor.nodes.document_loader:load_documents_node"
+    description: "Scans source directory for markdown files and loads text content"
+
+  - id: "semantic_chunker"
+    type: "function"
+    code_ref: "examples.stem_markdown_processor.nodes.semantic_chunker:semantic_chunker_node"
+    description: "Splits loaded documents into logical section chunks by sense"
+
+  - id: "stem_classifier"
+    type: "function"
+    code_ref: "examples.stem_markdown_processor.nodes.stem_classifier:stem_classifier_node"
+    description: "Classifies section chunks into STEM taxonomy with confidence scoring"
+
+  - id: "human_review"
+    type: "interrupt"
+    code_ref: "graphin.nodes.human_review:human_review_node"
+    description: "HITL review node triggered when classification confidence falls below threshold"
+
+  - id: "save_results"
+    type: "function"
+    code_ref: "examples.stem_markdown_processor.nodes.result_saver:save_results_node"
+    description: "Exports tagged markdown files and JSON summary report to output directory"
+
+edges:
+  - source: "__start__"
+    target: "load_documents"
+
+  - source: "load_documents"
+    target: "semantic_chunker"
+
+  - source: "semantic_chunker"
+    target: "stem_classifier"
+
+  - source: "stem_classifier"
+    condition_ref: "examples.stem_markdown_processor.nodes.stem_classifier:check_confidence_routing"
+    branches:
+      human_review: "human_review"
+      save_results: "save_results"
+
+  - source: "human_review"
+    condition_ref: "examples.stem_markdown_processor.nodes.stem_classifier:check_confidence_routing"
+    branches:
+      human_review: "human_review"
+      save_results: "save_results"
+
+  - source: "save_results"
+    target: "__end__"
+
+framework_configs:
+  langgraph:
+    checkpointer: "MemorySaver"
+    thread_id_prefix: "mac-graph-thread"
+  crewai:
+    verbose: true
+    process: "hierarchical"
+    acl_policy: "admin_only_node_deletion"
+  semantic_kernel:
+    service_id: "default"
+    plugins: ["GraphManipulationPlugin"]
