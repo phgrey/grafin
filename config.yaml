@@ -1,0 +1,18 @@
+# mac-graph Configuration
+
+provider: gemini # 'gemini' or 'ollama'
+
+# Directories
+source_dir: data/source
+output_dir: data/results
+
+# Classification confidence threshold (0.0 to 1.0)
+# If score < threshold, graph interrupts execution for human verification
+confidence_threshold: 0.75
+
+# Gemini Settings
+gemini_model: gemini-1.5-flash
+
+# Ollama Settings
+ollama_model: llama3.1
+ollama_base_url: http://localhost:11434

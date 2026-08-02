@@ -1,0 +1,2 @@
+[console_scripts]
+mac-graph = mac_graph.cli:app

@@ -1,0 +1,167 @@
+{
+  "total_chunks": 10,
+  "source_documents_count": 5,
+  "saved_files_count": 15,
+  "chunks": [
+    {
+      "id": "01_quantum_computing.md-chunk-1",
+      "source_file": "01_quantum_computing.md",
+      "section_title": "Superposition and Entanglement in Qubits",
+      "content": "Quantum computing leverages the principles of quantum mechanics to process information in ways that classical computers cannot. Unlike classical bits, which represent either a 0 or a 1, a quantum bit (qubit) can exist in a superposition of both states simultaneously.\n\n$$\\vert\\psi\\rangle = \\alpha\\vert 0\\rangle + \\beta\\vert 1\\rangle$$\n\nwhere $\\alpha$ and $\\beta$ are complex probability amplitudes satisfying $|\\alpha|^2 + |\\beta|^2 = 1$. When two qubits become entangled, the state of one qubit instantaneously correlates with the state of another, regardless of distance.",
+      "chunk_index": 1,
+      "status": "classified",
+      "human_verified": false,
+      "primary_domain": "Science",
+      "discipline": "Quantum Mechanics",
+      "secondary_disciplines": [
+        "Physics"
+      ],
+      "confidence_score": 0.88,
+      "reasoning": "Detected strong physics and quantum mechanics terminology."
+    },
+    {
+      "id": "01_quantum_computing.md-chunk-2",
+      "source_file": "01_quantum_computing.md",
+      "section_title": "Quantum Gates and Circuit Architecture",
+      "content": "Quantum gates manipulate qubit states through unitary transformations. Common single-qubit gates include the Pauli-X, Pauli-Y, Pauli-Z, and Hadamard (H) gates. The Hadamard gate creates superposition from standard basis states. Multiqubit operations, such as the Controlled-NOT (CNOT) gate, generate entanglement across quantum registers.",
+      "chunk_index": 2,
+      "status": "classified",
+      "human_verified": false,
+      "primary_domain": "Science",
+      "discipline": "Quantum Mechanics",
+      "secondary_disciplines": [
+        "Physics"
+      ],
+      "confidence_score": 0.88,
+      "reasoning": "Detected strong physics and quantum mechanics terminology."
+    },
+    {
+      "id": "02_deep_learning.md-chunk-1",
+      "source_file": "02_deep_learning.md",
+      "section_title": "Backpropagation and Stochastic Gradient Descent",
+      "content": "Deep learning models optimize parameters using backpropagation and stochastic gradient descent (SGD). The chain rule of calculus computes gradients of the loss function $L$ with respect to model weights $W$:\n\n$$\\frac{\\partial L}{\\partial W^{(l)}} = \\frac{\\partial L}{\\partial a^{(l)}} \\cdot \\frac{\\partial a^{(l)}}{\\partial z^{(l)}} \\cdot \\frac{\\partial z^{(l)}}{\\partial W^{(l)}}$$\n\nActivation functions such as ReLU, GELU, and Sigmoid introduce non-linearity, enabling deep architectures to approximate complex continuous functions.",
+      "chunk_index": 1,
+      "status": "classified",
+      "human_verified": false,
+      "primary_domain": "Technology",
+      "discipline": "Artificial Intelligence & Machine Learning",
+      "secondary_disciplines": [
+        "Computer Science"
+      ],
+      "confidence_score": 0.9,
+      "reasoning": "Detected AI/ML algorithms and neural network vocabulary."
+    },
+    {
+      "id": "02_deep_learning.md-chunk-2",
+      "source_file": "02_deep_learning.md",
+      "section_title": "Convolutional and Transformer Architectures",
+      "content": "Convolutional Neural Networks (CNNs) utilize spatial feature extraction filters for computer vision tasks, while Transformer models employ multi-head self-attention mechanisms to process sequential and relational tokens in natural language processing.",
+      "chunk_index": 2,
+      "status": "classified",
+      "human_verified": false,
+      "primary_domain": "Technology",
+      "discipline": "Artificial Intelligence & Machine Learning",
+      "secondary_disciplines": [
+        "Computer Science"
+      ],
+      "confidence_score": 0.9,
+      "reasoning": "Detected AI/ML algorithms and neural network vocabulary."
+    },
+    {
+      "id": "03_calculus_derivatives.md-chunk-1",
+      "source_file": "03_calculus_derivatives.md",
+      "section_title": "Definition of the Derivative",
+      "content": "The derivative of a real function $f(x)$ measures the sensitivity to change of the function value with respect to a change in its argument. Formally defined as the limit of a difference quotient:\n\n$$f'(x) = \\lim_{h \\to 0} \\frac{f(x + h) - f(x)}{h}$$\n\nIf this limit exists, the function $f$ is said to be differentiable at $x$.",
+      "chunk_index": 1,
+      "status": "classified",
+      "human_verified": false,
+      "primary_domain": "Mathematics",
+      "discipline": "Calculus & Analysis",
+      "secondary_disciplines": [
+        "Applied Mathematics"
+      ],
+      "confidence_score": 0.92,
+      "reasoning": "Detected mathematical equations, calculus, and matrix terminology."
+    },
+    {
+      "id": "03_calculus_derivatives.md-chunk-2",
+      "source_file": "03_calculus_derivatives.md",
+      "section_title": "Fundamental Theorem of Calculus",
+      "content": "The Fundamental Theorem of Calculus establishes the connection between differentiation and integration. It asserts that integration and differentiation are inverse operations:\n\n$$\\int_{a}^{b} f(x) \\, dx = F(b) - F(a)$$\n\nwhere $F'(x) = f(x)$.",
+      "chunk_index": 2,
+      "status": "classified",
+      "human_verified": false,
+      "primary_domain": "Mathematics",
+      "discipline": "Calculus & Analysis",
+      "secondary_disciplines": [
+        "Applied Mathematics"
+      ],
+      "confidence_score": 0.92,
+      "reasoning": "Detected mathematical equations, calculus, and matrix terminology."
+    },
+    {
+      "id": "04_cellular_respiration.md-chunk-1",
+      "source_file": "04_cellular_respiration.md",
+      "section_title": "Glycolysis and the Krebs Cycle",
+      "content": "Cellular respiration is a set of metabolic reactions and processes that take place in the cells of organisms to convert biochemical energy from nutrients into adenosine triphosphate (ATP). Glycolysis breaks down glucose into pyruvate in the cytoplasm, yielding 2 ATP and 2 NADH molecules.\n\n$$\\text{C}_6\\text{H}_{12}\\text{O}_6 + 6\\text{O}_2 \\rightarrow 6\\text{CO}_2 + 6\\text{H}_2\\text{O} + \\text{ATP}$$\n\nPyruvate is subsequently oxidized and enters the mitochondrial matrix for the Krebs cycle (citric acid cycle).",
+      "chunk_index": 1,
+      "status": "classified",
+      "human_verified": false,
+      "primary_domain": "Mathematics",
+      "discipline": "Calculus & Analysis",
+      "secondary_disciplines": [
+        "Applied Mathematics"
+      ],
+      "confidence_score": 0.92,
+      "reasoning": "Detected mathematical equations, calculus, and matrix terminology."
+    },
+    {
+      "id": "04_cellular_respiration.md-chunk-2",
+      "source_file": "04_cellular_respiration.md",
+      "section_title": "Electron Transport Chain and Oxidative Phosphorylation",
+      "content": "The electron transport chain consists of a series of protein complexes embedded in the inner mitochondrial membrane. Electrons transferred from NADH and FADH2 drive proton pumps, generating an electrochemical gradient across the membrane that powers ATP synthase.",
+      "chunk_index": 2,
+      "status": "classified",
+      "human_verified": false,
+      "primary_domain": "Science",
+      "discipline": "Quantum Mechanics",
+      "secondary_disciplines": [
+        "Physics"
+      ],
+      "confidence_score": 0.88,
+      "reasoning": "Detected strong physics and quantum mechanics terminology."
+    },
+    {
+      "id": "05_interdisciplinary_notes.md-chunk-1",
+      "source_file": "05_interdisciplinary_notes.md",
+      "section_title": "Overview of Systemic Research",
+      "content": "This folder contains preliminary thoughts on system dynamics, team organizational workflows, and notes from generic seminars. The intersection between technological adoption, management practices, and basic analytical tools remains a work in progress.",
+      "chunk_index": 1,
+      "status": "classified",
+      "human_verified": false,
+      "primary_domain": "Technology",
+      "discipline": "Information Systems",
+      "secondary_disciplines": [
+        "Data Science & Analytics"
+      ],
+      "confidence_score": 0.55,
+      "reasoning": "General technical text with mixed signals; low confidence requires user verification."
+    },
+    {
+      "id": "05_interdisciplinary_notes.md-chunk-2",
+      "source_file": "05_interdisciplinary_notes.md",
+      "section_title": "Hybrid Computational Biology and Hardware Interfaces",
+      "content": "Discussion on combining sensor readouts with custom software scripts for general laboratory monitoring. Some participants suggested using spreadsheets while others proposed simple microcontroller code.",
+      "chunk_index": 2,
+      "status": "classified",
+      "human_verified": false,
+      "primary_domain": "Technology",
+      "discipline": "Information Systems",
+      "secondary_disciplines": [
+        "Data Science & Analytics"
+      ],
+      "confidence_score": 0.55,
+      "reasoning": "General technical text with mixed signals; low confidence requires user verification."
+    }
+  ]
+}
