@@ -14,12 +14,14 @@ except ImportError:
     Command = None
 
 from mac_graph.config import load_config, AppConfig
-from mac_graph.graph import build_mac_graph
-from mac_graph.utils.stem_taxonomy import STEM_TAXONOMY, get_all_disciplines, get_stem_domains
+from mac_graph.manifest.loader import load_manifest_from_yaml
+from mac_graph.adapters.langgraph_adapter import LangGraphAdapter
+from mac_graph.hitl.dispatcher import HITLDispatcher
+from mac_graph.utils.stem_taxonomy import STEM_TAXONOMY
 
 app = typer.Typer(
     name="mac-graph",
-    help="macOS Desktop Helper - STEM Markdown Document Classifier & LangGraph Workflow Runner",
+    help="macOS Desktop Helper - Manifest-Driven STEM Document Classifier & LangGraph Workflow Runner",
 )
 console = Console()
 
@@ -67,17 +69,12 @@ def prompt_user_for_hitl_override(review_item: Dict[str, Any]) -> Dict[str, Any]
         table.add_column("Domain", style="cyan", no_wrap=True)
         table.add_column("Subfields", style="magenta")
 
-        all_flat = []
         for dom, fields in STEM_TAXONOMY.items():
             table.add_row(dom, ", ".join(fields))
-            all_flat.extend(fields)
 
         console.print(table)
 
-        selected_disc = Prompt.ask(
-            "Enter discipline name from taxonomy",
-            default=suggested_disc,
-        )
+        selected_disc = Prompt.ask("Enter discipline name from taxonomy", default=suggested_disc)
 
         chosen_domain = suggested_domain
         for dom, fields in STEM_TAXONOMY.items():
@@ -92,9 +89,7 @@ def prompt_user_for_hitl_override(review_item: Dict[str, Any]) -> Dict[str, Any]
         }
     else:
         custom_disc = Prompt.ask("Enter custom discipline name")
-        custom_domain = Prompt.ask(
-            "Enter primary domain (Science, Technology, Engineering, Mathematics)", default="Technology"
-        )
+        custom_domain = Prompt.ask("Enter primary domain (Science, Technology, Engineering, Mathematics)", default="Technology")
         return {
             "primary_domain": custom_domain,
             "discipline": custom_disc,
@@ -105,27 +100,19 @@ def prompt_user_for_hitl_override(review_item: Dict[str, Any]) -> Dict[str, Any]
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
-    source_dir: Optional[str] = typer.Option(
-        None, "--source-dir", "-s", help="Path to source folder containing markdown files"
-    ),
-    output_dir: Optional[str] = typer.Option(
-        None, "--output-dir", "-o", help="Path to directory where tagged results are saved"
-    ),
-    confidence_threshold: Optional[float] = typer.Option(
-        None, "--confidence-threshold", "-t", help="Confidence threshold score (0.0 to 1.0)"
-    ),
-    provider: Optional[str] = typer.Option(
-        None, "--provider", "-p", help="LLM Provider: 'gemini' or 'ollama'"
-    ),
-    config_file: Optional[str] = typer.Option(
-        None, "--config", "-c", help="Path to custom config.yaml file"
-    ),
+    manifest: Optional[str] = typer.Option(None, "--manifest", "-m", help="Path to graph manifest YAML file"),
+    source_dir: Optional[str] = typer.Option(None, "--source-dir", "-s", help="Path to source folder containing markdown files"),
+    output_dir: Optional[str] = typer.Option(None, "--output-dir", "-o", help="Path to directory where tagged results are saved"),
+    confidence_threshold: Optional[float] = typer.Option(None, "--confidence-threshold", "-t", help="Confidence threshold score (0.0 to 1.0)"),
+    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="LLM Provider: 'gemini' or 'ollama'"),
+    config_file: Optional[str] = typer.Option(None, "--config", "-c", help="Path to custom config.yaml file"),
 ):
-    """Run the mac-graph execution pipeline on Markdown documents."""
+    """Run the manifest-driven mac-graph execution pipeline on Markdown documents."""
     if ctx.invoked_subcommand is not None:
         return
 
     run_pipeline(
+        manifest_path=manifest,
         source_dir=source_dir,
         output_dir=output_dir,
         confidence_threshold=confidence_threshold,
@@ -136,24 +123,16 @@ def main(
 
 @app.command(name="process")
 def process_cmd(
-    source_dir: Optional[str] = typer.Option(
-        None, "--source-dir", "-s", help="Path to source folder containing markdown files"
-    ),
-    output_dir: Optional[str] = typer.Option(
-        None, "--output-dir", "-o", help="Path to directory where tagged results are saved"
-    ),
-    confidence_threshold: Optional[float] = typer.Option(
-        None, "--confidence-threshold", "-t", help="Confidence threshold score (0.0 to 1.0)"
-    ),
-    provider: Optional[str] = typer.Option(
-        None, "--provider", "-p", help="LLM Provider: 'gemini' or 'ollama'"
-    ),
-    config_file: Optional[str] = typer.Option(
-        None, "--config", "-c", help="Path to custom config.yaml file"
-    ),
+    manifest: Optional[str] = typer.Option(None, "--manifest", "-m", help="Path to graph manifest YAML file"),
+    source_dir: Optional[str] = typer.Option(None, "--source-dir", "-s", help="Path to source folder containing markdown files"),
+    output_dir: Optional[str] = typer.Option(None, "--output-dir", "-o", help="Path to directory where tagged results are saved"),
+    confidence_threshold: Optional[float] = typer.Option(None, "--confidence-threshold", "-t", help="Confidence threshold score (0.0 to 1.0)"),
+    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="LLM Provider: 'gemini' or 'ollama'"),
+    config_file: Optional[str] = typer.Option(None, "--config", "-c", help="Path to custom config.yaml file"),
 ):
-    """Subcommand: Run the mac-graph execution pipeline on Markdown documents."""
+    """Subcommand: Run the manifest-driven mac-graph execution pipeline on Markdown documents."""
     run_pipeline(
+        manifest_path=manifest,
         source_dir=source_dir,
         output_dir=output_dir,
         confidence_threshold=confidence_threshold,
@@ -163,16 +142,26 @@ def process_cmd(
 
 
 def run_pipeline(
+    manifest_path: Optional[str] = None,
     source_dir: Optional[str] = None,
     output_dir: Optional[str] = None,
     confidence_threshold: Optional[float] = None,
     provider: Optional[str] = None,
     config_file: Optional[str] = None,
 ):
-    console.print("[bold blue]🚀 Launching mac-graph document processing execution pipeline...[/bold blue]")
+    console.print("[bold blue]🚀 Launching Manifest-Driven mac-graph Execution Engine...[/bold blue]")
 
+    # 1. Load Manifest
+    target_manifest_path = manifest_path or "manifest.yaml"
+    if not Path(target_manifest_path).exists():
+        console.print(f"[bold red]Error: Manifest file '{target_manifest_path}' not found![/bold red]")
+        sys.exit(1)
+
+    graph_manifest = load_manifest_from_yaml(target_manifest_path)
+    console.print(f"📜 [dim]Loaded Graph Manifest: '{graph_manifest.metadata.get('name')}' (v{graph_manifest.version})[/dim]")
+
+    # 2. Load Config & Apply Overrides
     cfg = load_config(config_file)
-
     if source_dir:
         cfg.source_dir = source_dir
     if output_dir:
@@ -187,8 +176,9 @@ def run_pipeline(
         f"Threshold={cfg.confidence_threshold}, Provider='{cfg.provider}'[/dim]"
     )
 
-    checkpointer = MemorySaver()
-    compiled_graph = build_mac_graph(checkpointer=checkpointer)
+    # 3. Build Executable via LangGraphAdapter
+    adapter = LangGraphAdapter()
+    compiled_graph = adapter.build_executable(graph_manifest)
 
     initial_state = {
         "config": cfg.model_dump(),
@@ -197,8 +187,10 @@ def run_pipeline(
         "saved_results": [],
     }
 
-    thread_config = {"configurable": {"thread_id": "mac-graph-cli-run-1"}}
+    thread_config = {"configurable": {"thread_id": "mac-graph-manifest-run-1"}}
+    hitl_dispatcher = HITLDispatcher()
 
+    # Execute graph
     result_state = compiled_graph.invoke(initial_state, config=thread_config)
 
     while True:
@@ -209,6 +201,7 @@ def run_pipeline(
 
         if interrupts:
             hitl_item = interrupts[0].value
+            hitl_dispatcher.dispatch_interrupt(hitl_item)
             user_override = prompt_user_for_hitl_override(hitl_item)
 
             if Command is not None:
@@ -220,6 +213,7 @@ def run_pipeline(
 
         elif pending:
             hitl_item = pending[0]
+            hitl_dispatcher.dispatch_interrupt(hitl_item)
             user_override = prompt_user_for_hitl_override(hitl_item)
             update_state = dict(result_state)
             update_state["user_override"] = user_override
@@ -232,7 +226,7 @@ def run_pipeline(
     status_msg = result_state.get("status_message", "Completed successfully.")
 
     console.print("\n" + "=" * 70, style="bold green")
-    console.print("🎉 [bold green]GRAPH EXECUTION COMPLETED SUCCESSFULLY![/bold green]")
+    console.print("🎉 [bold green]MANIFEST-DRIVEN GRAPH EXECUTION COMPLETED SUCCESSFULLY![/bold green]")
     console.print(f"📄 Saved {len(saved_files)} output artifacts to '[bold cyan]{cfg.output_dir}[/bold cyan]'.")
     console.print(f"ℹ️ {status_msg}")
     console.print("=" * 70 + "\n", style="bold green")
