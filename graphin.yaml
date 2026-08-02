@@ -1,8 +1,38 @@
 version: "0.1.0"
 metadata:
   name: "graphin_default_workflow"
-  description: "GraphInYAML default manifest definition"
+  description: "GraphInYAML default manifest definition with centralized LLM models"
   author: "graphin team"
+
+models:
+  - id: "gemini_flash"
+    provider: "gemini"
+    model_name: "gemini-1.5-flash"
+    protocol: "https"
+    endpoint: "https://generativelanguage.googleapis.com"
+    api_key_env: "GEMINI_API_KEY"
+    parameters:
+      temperature: 0.1
+
+  - id: "local_ollama"
+    provider: "ollama"
+    model_name: "llama3.1"
+    protocol: "http"
+    endpoint: "http://localhost:11434"
+    api_key_env: "OLLAMA_API_KEY"
+    parameters:
+      temperature: 0.1
+
+  - id: "hf_mistral"
+    provider: "huggingface"
+    model_name: "mistralai/Mistral-7B-Instruct-v0.2"
+    protocol: "https"
+    endpoint: "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+    api_key_env: "HUGGINGFACE_API_KEY"
+    parameters:
+      temperature: 0.1
+
+default_model_ref: "gemini_flash"
 
 state_schema:
   type: "object"

@@ -1,7 +1,8 @@
 import json
 from typing import Dict, Any, List, Optional, Callable
 from graphin.adapters.base import IFrameworkAdapter
-from graphin.manifest.schema import GraphManifest, NodeDefinition, EdgeDefinition
+from graphin.manifest.schema import GraphManifest, NodeDefinition, EdgeDefinition, ModelDefinition
+from graphin.llm import resolve_api_key
 
 
 class CrewAIGraphManipulationTool:
@@ -53,7 +54,7 @@ class CrewAIGraphManipulationTool:
 
 
 class CrewAIAdapter(IFrameworkAdapter):
-    """CrewAI Framework Adapter (Frontend+): Translates manifest to CrewAI workflows, tool wrappers, and ACL hooks."""
+    """CrewAI Framework Adapter (Frontend+): Translates manifest to CrewAI workflows, model configs, and ACL hooks."""
 
     def __init__(self, acl_policy: Optional[str] = "admin_only_node_deletion"):
         self.acl_policy = acl_policy
@@ -78,7 +79,20 @@ class CrewAIAdapter(IFrameworkAdapter):
         return True
 
     def extract_config(self, manifest: GraphManifest) -> Dict[str, Any]:
-        return manifest.framework_configs.get("crewai", {})
+        base_cfg = dict(manifest.framework_configs.get("crewai", {}))
+        # Adopt manifest models into CrewAI LLM configurations
+        llm_configs = {}
+        for m in manifest.models:
+            key = resolve_api_key(m.api_key_env, provider=m.provider)
+            llm_configs[m.id] = {
+                "model": f"{m.provider}/{m.model_name}",
+                "base_url": m.endpoint,
+                "protocol": m.protocol,
+                "api_key": key,
+                "parameters": m.parameters,
+            }
+        base_cfg["models"] = llm_configs
+        return base_cfg
 
     def inject_config(self, manifest: GraphManifest, config_data: Dict[str, Any]) -> GraphManifest:
         manifest.framework_configs["crewai"] = config_data
@@ -94,10 +108,13 @@ class CrewAIAdapter(IFrameworkAdapter):
                 "code_ref": node.code_ref,
             })
 
+        crewai_models = self.extract_config(manifest).get("models", {})
+
         return {
             "crew_name": manifest.metadata.get("name", "GraphIn_Crew"),
             "process": manifest.framework_configs.get("crewai", {}).get("process", "sequential"),
             "tasks": tasks,
+            "crewai_llm_configs": crewai_models,
         }
 
     def export_manifest(self, native_graph_obj: Any) -> GraphManifest:
@@ -105,20 +122,36 @@ class CrewAIAdapter(IFrameworkAdapter):
             return native_graph_obj
 
         nodes = []
-        if isinstance(native_graph_obj, dict) and "tasks" in native_graph_obj:
-            for task in native_graph_obj["tasks"]:
-                nodes.append(
-                    NodeDefinition(
-                        id=task["name"],
-                        type="agent",
-                        code_ref=task.get("code_ref", "graphin.nodes:default"),
-                        description=task.get("description", ""),
+        models = []
+        if isinstance(native_graph_obj, dict):
+            if "tasks" in native_graph_obj:
+                for task in native_graph_obj["tasks"]:
+                    nodes.append(
+                        NodeDefinition(
+                            id=task["name"],
+                            type="agent",
+                            code_ref=task.get("code_ref", "graphin.nodes:default"),
+                            description=task.get("description", ""),
+                        )
                     )
-                )
+            if "crewai_llm_configs" in native_graph_obj:
+                for alias, cfg in native_graph_obj["crewai_llm_configs"].items():
+                    prov, name = cfg["model"].split("/", 1) if "/" in cfg["model"] else ("gemini", cfg["model"])
+                    models.append(
+                        ModelDefinition(
+                            id=alias,
+                            provider=prov,
+                            model_name=name,
+                            endpoint=cfg.get("base_url"),
+                            protocol=cfg.get("protocol", "https"),
+                            parameters=cfg.get("parameters", {}),
+                        )
+                    )
 
         return GraphManifest(
             version="0.1.0",
-            metadata={"name": native_graph_obj.get("crew_name", "exported_crew")},
+            metadata={"name": native_graph_obj.get("crew_name", "exported_crew") if isinstance(native_graph_obj, dict) else "exported_crew"},
+            models=models,
             nodes=nodes,
             framework_configs={"crewai": {"exported": True}},
         )

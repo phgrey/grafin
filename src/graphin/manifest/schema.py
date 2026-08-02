@@ -2,6 +2,16 @@ from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 
 
+class ModelDefinition(BaseModel):
+    id: str = Field(..., description="Unique model alias/identifier in manifest")
+    provider: str = Field(..., description="LLM provider: 'gemini', 'ollama', 'huggingface', 'openai'")
+    model_name: str = Field(..., description="Provider-specific model name/path")
+    protocol: Optional[str] = Field(default="https", description="Connection protocol: 'https', 'http', 'grpc', 'rest'")
+    endpoint: Optional[str] = Field(default=None, description="API Endpoint / Base URL")
+    api_key_env: Optional[str] = Field(default=None, description="Environment variable name for API key")
+    parameters: Dict[str, Any] = Field(default_factory=dict, description="Model hyperparameters (temperature, max_tokens, etc.)")
+
+
 class NodeDefinition(BaseModel):
     id: str = Field(..., description="Unique node identifier")
     type: str = Field(default="function", description="Node type: 'function', 'agent', 'tool', 'interrupt'")
@@ -24,12 +34,21 @@ class EdgeDefinition(BaseModel):
 class GraphManifest(BaseModel):
     version: str = Field(default="0.1.0", description="GraphInYAML format version")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Graph metadata (name, description, author)")
+    models: List[ModelDefinition] = Field(default_factory=list, description="Centralized LLM model connection definitions")
+    default_model_ref: Optional[str] = Field(default=None, description="ID of default model to use")
     state_schema: Dict[str, Any] = Field(default_factory=dict, description="JSON Schema for graph state")
     nodes: List[NodeDefinition] = Field(default_factory=list, description="List of node definitions")
     edges: List[EdgeDefinition] = Field(default_factory=list, description="List of edge definitions")
     framework_configs: Dict[str, Any] = Field(
         default_factory=dict, description="Framework-specific configuration blocks (langgraph, crewai, semantic_kernel)"
     )
+
+    def get_model(self, model_id: str) -> Optional[ModelDefinition]:
+        """Find a model definition by its ID."""
+        for m in self.models:
+            if m.id == model_id:
+                return m
+        return None
 
     def get_node(self, node_id: str) -> Optional[NodeDefinition]:
         """Find a node definition by its ID."""

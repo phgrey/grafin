@@ -1,7 +1,8 @@
 import json
 from typing import Dict, Any, List, Optional
 from graphin.adapters.base import IFrameworkAdapter
-from graphin.manifest.schema import GraphManifest, NodeDefinition, EdgeDefinition
+from graphin.manifest.schema import GraphManifest, NodeDefinition, EdgeDefinition, ModelDefinition
+from graphin.llm import resolve_api_key
 
 
 class SemanticKernelFunctionFilter:
@@ -66,7 +67,22 @@ class SemanticKernelAdapter(IFrameworkAdapter):
         return "semantic_kernel"
 
     def extract_config(self, manifest: GraphManifest) -> Dict[str, Any]:
-        return manifest.framework_configs.get("semantic_kernel", {})
+        base_cfg = dict(manifest.framework_configs.get("semantic_kernel", {}))
+        # Adopt manifest models into Semantic Kernel AI ChatCompletion service registries
+        sk_services = {}
+        for m in manifest.models:
+            key = resolve_api_key(m.api_key_env, provider=m.provider)
+            sk_services[m.id] = {
+                "service_id": m.id,
+                "ai_model_id": m.model_name,
+                "provider": m.provider,
+                "endpoint": m.endpoint,
+                "protocol": m.protocol,
+                "api_key": key,
+                "parameters": m.parameters,
+            }
+        base_cfg["ai_services"] = sk_services
+        return base_cfg
 
     def inject_config(self, manifest: GraphManifest, config_data: Dict[str, Any]) -> GraphManifest:
         manifest.framework_configs["semantic_kernel"] = config_data
@@ -81,8 +97,11 @@ class SemanticKernelAdapter(IFrameworkAdapter):
                 "code_ref": node.code_ref,
             }
 
+        sk_config = self.extract_config(manifest)
+
         return {
-            "kernel_service_id": manifest.framework_configs.get("semantic_kernel", {}).get("service_id", "default"),
+            "kernel_service_id": sk_config.get("service_id", "default"),
+            "ai_services": sk_config.get("ai_services", {}),
             "plugins": plugins,
             "edges": [e.model_dump() for e in manifest.edges],
         }
@@ -92,20 +111,35 @@ class SemanticKernelAdapter(IFrameworkAdapter):
             return native_graph_obj
 
         nodes = []
-        if isinstance(native_graph_obj, dict) and "plugins" in native_graph_obj:
-            for name, spec in native_graph_obj["plugins"].items():
-                nodes.append(
-                    NodeDefinition(
-                        id=name,
-                        type="function",
-                        code_ref=spec.get("code_ref", f"sk_plugin:{name}"),
-                        description=spec.get("description", ""),
+        models = []
+        if isinstance(native_graph_obj, dict):
+            if "plugins" in native_graph_obj:
+                for name, spec in native_graph_obj["plugins"].items():
+                    nodes.append(
+                        NodeDefinition(
+                            id=name,
+                            type="function",
+                            code_ref=spec.get("code_ref", f"sk_plugin:{name}"),
+                            description=spec.get("description", ""),
+                        )
                     )
-                )
+            if "ai_services" in native_graph_obj:
+                for sid, s_spec in native_graph_obj["ai_services"].items():
+                    models.append(
+                        ModelDefinition(
+                            id=sid,
+                            provider=s_spec.get("provider", "gemini"),
+                            model_name=s_spec.get("ai_model_id", "default"),
+                            endpoint=s_spec.get("endpoint"),
+                            protocol=s_spec.get("protocol", "https"),
+                            parameters=s_spec.get("parameters", {}),
+                        )
+                    )
 
         return GraphManifest(
             version="0.1.0",
             metadata={"name": "exported_sk_kernel"},
+            models=models,
             nodes=nodes,
             framework_configs={"semantic_kernel": {"exported": True}},
         )
