@@ -1,3 +1,4 @@
+import os
 import json
 import re
 from typing import Dict, Any, List, Literal
@@ -107,7 +108,10 @@ def classify_chunk(chunk: TextChunk, config: AppConfig, llm=None) -> TextChunk:
 
     result: STEMClassificationOutput
 
-    if llm is not None:
+    # In test mode or when offline, use fast deterministic fallback classifier
+    if os.getenv("GRAPHIN_TEST_MODE") == "1" or llm is None:
+        result = heuristic_fallback_classifier(title, content)
+    else:
         try:
             taxonomy_str = json.dumps(STEM_TAXONOMY, indent=2)
             prompt_text = CLASSIFICATION_PROMPT.format(
@@ -126,8 +130,6 @@ def classify_chunk(chunk: TextChunk, config: AppConfig, llm=None) -> TextChunk:
         except Exception as e:
             print(f"LLM Classification failed for '{title}': {e}. Using fallback classifier.")
             result = heuristic_fallback_classifier(title, content)
-    else:
-        result = heuristic_fallback_classifier(title, content)
 
     classified = dict(chunk)
     classified["primary_domain"] = result.primary_domain
@@ -151,10 +153,11 @@ def stem_classifier_node(state: GraphState) -> Dict[str, Any]:
     app_config = AppConfig(**config_dict)
 
     llm = None
-    try:
-        llm = get_llm_client(app_config)
-    except Exception as e:
-        pass
+    if os.getenv("GRAPHIN_TEST_MODE") != "1":
+        try:
+            llm = get_llm_client(app_config)
+        except Exception:
+            pass
 
     chunks = state.get("chunks", [])
     classified_chunks: List[TextChunk] = []

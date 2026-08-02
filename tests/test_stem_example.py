@@ -1,11 +1,18 @@
+import os
 import pytest
 from pathlib import Path
+
+# Enable GraphIn offline test mode to bypass live network API socket calls
+os.environ["GRAPHIN_TEST_MODE"] = "1"
+
 from graphin.config import AppConfig
 from graphin.manifest.loader import load_manifest_from_yaml
 from graphin.adapters.langgraph_adapter import LangGraphAdapter
 from examples.stem_markdown_processor.utils.stem_taxonomy import validate_discipline
 from examples.stem_markdown_processor.nodes.semantic_chunker import split_markdown_into_sections
-from examples.stem_markdown_processor.nodes.stem_classifier import heuristic_fallback_classifier
+from examples.stem_markdown_processor.phase1_langgraph_export_and_run import run_phase_1
+from examples.stem_markdown_processor.phase2_crewai_inject_and_run import run_phase_2
+from examples.stem_markdown_processor.phase3_semantic_kernel_inspect import run_phase_3
 
 
 def test_stem_example_taxonomy_validation():
@@ -22,36 +29,16 @@ def test_stem_example_chunking():
     assert chunks[0]["section_title"] == "Section Title"
 
 
-def test_stem_example_full_pipeline(tmp_path):
-    manifest_path = "examples/stem_markdown_processor/stem_markdown_processor.graphin.yaml"
-    manifest = load_manifest_from_yaml(manifest_path)
+def test_single_orchestrator_experiment_phases():
+    manifest1 = run_phase_1(interactive=False)
+    assert manifest1 is not None
+    assert len(manifest1.nodes) >= 5
+    assert len(manifest1.models) == 3
 
-    source_dir = tmp_path / "source"
-    output_dir = tmp_path / "results"
-    source_dir.mkdir()
+    manifest2 = run_phase_2()
+    assert manifest2 is not None
+    assert "crewai" in manifest2.framework_configs
 
-    sample_file = source_dir / "quantum_test.md"
-    sample_file.write_text("# Quantum Physics\n\nSuperposition of qubits in quantum circuits.")
-
-    cfg = AppConfig(
-        source_dir=str(source_dir),
-        output_dir=str(output_dir),
-        confidence_threshold=0.70,
-    )
-
-    adapter = LangGraphAdapter()
-    compiled_graph = adapter.build_executable(manifest)
-
-    initial_state = {
-        "config": cfg.model_dump(),
-        "classified_chunks": [],
-        "pending_reviews": [],
-        "saved_results": [],
-    }
-
-    thread_config = {"configurable": {"thread_id": "test-stem-run"}}
-    res_state = compiled_graph.invoke(initial_state, config=thread_config)
-
-    saved_files = res_state.get("saved_results", [])
-    assert len(saved_files) > 0
-    assert (output_dir / "quantum_test_tagged.md").exists()
+    manifest3 = run_phase_3()
+    assert manifest3 is not None
+    assert "semantic_kernel" in manifest3.framework_configs

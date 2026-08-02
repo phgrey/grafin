@@ -1,115 +1,94 @@
-version: "0.1.0"
+version: 0.1.0
 metadata:
-  name: "stem_markdown_processor"
-  description: "GraphInYAML manifest for STEM markdown document chunking, taxonomy classification, and HITL verification"
-  author: "graphin team"
-
+  name: stem_markdown_processor
+  description: Single Orchestrator Experiment STEM Markdown Processor
+  author: graphin team
 models:
-  - id: "gemini_flash"
-    provider: "gemini"
-    model_name: "gemini-1.5-flash"
-    protocol: "https"
-    endpoint: "https://generativelanguage.googleapis.com"
-    api_key_env: "GEMINI_API_KEY"
-    parameters:
-      temperature: 0.1
-
-  - id: "local_ollama"
-    provider: "ollama"
-    model_name: "llama3.1"
-    protocol: "http"
-    endpoint: "http://localhost:11434"
-    api_key_env: "OLLAMA_API_KEY"
-    parameters:
-      temperature: 0.1
-
-  - id: "hf_mistral"
-    provider: "huggingface"
-    model_name: "mistralai/Mistral-7B-Instruct-v0.2"
-    protocol: "https"
-    endpoint: "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
-    api_key_env: "HUGGINGFACE_API_KEY"
-    parameters:
-      temperature: 0.1
-
-default_model_ref: "gemini_flash"
-
-state_schema:
-  type: "object"
-  properties:
-    source_files:
-      type: "array"
-      items: { type: "string" }
-    documents:
-      type: "array"
-    chunks:
-      type: "array"
-    classified_chunks:
-      type: "array"
-    pending_reviews:
-      type: "array"
-    status_message:
-      type: "string"
-
+- id: gemini_flash
+  provider: gemini
+  model_name: gemini-1.5-flash
+  protocol: https
+  endpoint: https://generativelanguage.googleapis.com
+  api_key_env: GEMINI_API_KEY
+  parameters:
+    temperature: 0.1
+- id: local_ollama
+  provider: ollama
+  model_name: llama3.1
+  protocol: http
+  endpoint: http://localhost:11434
+  api_key_env: OLLAMA_API_KEY
+  parameters:
+    temperature: 0.1
+- id: hf_mistral
+  provider: huggingface
+  model_name: mistralai/Mistral-7B-Instruct-v0.2
+  protocol: https
+  endpoint: https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2
+  api_key_env: HUGGINGFACE_API_KEY
+  parameters:
+    temperature: 0.1
+default_model_ref: gemini_flash
+state_schema: {}
 nodes:
-  - id: "load_documents"
-    type: "function"
-    code_ref: "examples.stem_markdown_processor.nodes.document_loader:load_documents_node"
-    description: "Scans source directory for markdown files and loads text content"
-
-  - id: "semantic_chunker"
-    type: "function"
-    code_ref: "examples.stem_markdown_processor.nodes.semantic_chunker:semantic_chunker_node"
-    description: "Splits loaded documents into logical section chunks by sense"
-
-  - id: "stem_classifier"
-    type: "function"
-    code_ref: "examples.stem_markdown_processor.nodes.stem_classifier:stem_classifier_node"
-    description: "Classifies section chunks into STEM taxonomy with confidence scoring"
-
-  - id: "human_review"
-    type: "interrupt"
-    code_ref: "graphin.nodes.human_review:human_review_node"
-    description: "HITL review node triggered when classification confidence falls below threshold"
-
-  - id: "save_results"
-    type: "function"
-    code_ref: "examples.stem_markdown_processor.nodes.result_saver:save_results_node"
-    description: "Exports tagged markdown files and JSON summary report to output directory"
-
+- id: load_documents
+  type: function
+  code_ref: examples.stem_markdown_processor.nodes.document_loader:load_documents_node
+  description: Loads markdown files
+  metadata: {}
+- id: semantic_chunker
+  type: function
+  code_ref: examples.stem_markdown_processor.nodes.semantic_chunker:semantic_chunker_node
+  description: Splits markdown into section chunks
+  metadata: {}
+- id: stem_classifier
+  type: function
+  code_ref: examples.stem_markdown_processor.nodes.stem_classifier:stem_classifier_node
+  description: Classifies chunks into STEM taxonomy
+  metadata: {}
+- id: human_review
+  type: interrupt
+  code_ref: graphin.nodes.human_review:human_review_node
+  description: HITL review node for low confidence classifications
+  metadata: {}
+- id: save_results
+  type: function
+  code_ref: examples.stem_markdown_processor.nodes.result_saver:save_results_node
+  description: Exports tagged results
+  metadata: {}
+- id: quality_audit
+  type: agent
+  code_ref: examples.stem_markdown_processor.nodes:audit
+  description: ''
+  metadata: {}
 edges:
-  - source: "__start__"
-    target: "load_documents"
-
-  - source: "load_documents"
-    target: "semantic_chunker"
-
-  - source: "semantic_chunker"
-    target: "stem_classifier"
-
-  - source: "stem_classifier"
-    condition_ref: "examples.stem_markdown_processor.nodes.stem_classifier:check_confidence_routing"
-    branches:
-      human_review: "human_review"
-      save_results: "save_results"
-
-  - source: "human_review"
-    condition_ref: "examples.stem_markdown_processor.nodes.stem_classifier:check_confidence_routing"
-    branches:
-      human_review: "human_review"
-      save_results: "save_results"
-
-  - source: "save_results"
-    target: "__end__"
-
+- source: __start__
+  target: load_documents
+- source: load_documents
+  target: semantic_chunker
+- source: semantic_chunker
+  target: stem_classifier
+- source: stem_classifier
+  condition_ref: examples.stem_markdown_processor.nodes.stem_classifier:check_confidence_routing
+  branches:
+    human_review: human_review
+    save_results: save_results
+- source: human_review
+  condition_ref: examples.stem_markdown_processor.nodes.stem_classifier:check_confidence_routing
+  branches:
+    human_review: human_review
+    save_results: save_results
+- source: save_results
+  target: __end__
 framework_configs:
   langgraph:
-    checkpointer: "MemorySaver"
-    thread_id_prefix: "mac-graph-thread"
+    checkpointer: MemorySaver
   crewai:
     verbose: true
-    process: "hierarchical"
-    acl_policy: "admin_only_node_deletion"
+    process: hierarchical
+    manager_llm: gemini-1.5-flash
+    acl_policy: admin_only_node_deletion
   semantic_kernel:
-    service_id: "default"
-    plugins: ["GraphManipulationPlugin"]
+    service_id: default_sk_service
+    plugins:
+    - GraphManipulationPlugin
