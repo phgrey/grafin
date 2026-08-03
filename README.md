@@ -6,38 +6,47 @@ Graph workflows are defined in the **`GraphInYAML`** format (`graphin.yaml` or `
 
 ## Features
 
-- **`GraphInYAML` Format**: Declarative YAML manifest specification (`graphin.yaml`) serving as the single source of truth for graph topology, nodes (`code_ref`), edges, state schema, and framework settings.
-- **Multi-Framework Adapters**:
-  - **LangGraph Adapter**: Executable build engine & graph exporter ("Graph Frontend").
-  - **CrewAI Adapter**: Exposes graph node/edge manipulation tools (`CrewAIGraphManipulationTool`) with support for CrewAI **Hooks** and Access Control Lists (ACL) ("Graph Frontend+").
-  - **Semantic Kernel Adapter**: Exposes graph manipulation plugins (`GraphManipulationPlugin`) with **Function Execution Filters** ("Graph Backend").
-  - **GraphInYAML Adapter**: Native manifest loader and serializer.
-- **Centralized HITL & Adaptive Cards**: Captures graph execution interrupts and formats them into Microsoft **Adaptive Cards** v1.4 JSON payloads for user interaction in chat channels.
-- **Modular Examples**: Example workflows (such as the STEM Markdown Processor) are isolated in `examples/`.
+- **Semantic Markdown Chunking**: Parses `.md` documents by headings, paragraphs, and sense.
+- **STEM Taxonomy Tagging**: Classifies chunks into Science, Technology, Engineering, and Mathematics fields with reasoning and confidence scores.
+- **Dual LLM Provider Support**: Supports **Google Gemini 1.5** (`GEMINI_API_KEY`) and **Ollama** (`OLLAMA_API_KEY` / local endpoint).
+- **Human-in-the-Loop (HITL) Interrupts**: Graph execution automatically pauses when classification confidence is below a configurable threshold, prompting user confirmation/override in the terminal before resuming.
+- **Structured Results Output**: Exports tagged markdown documents with detailed YAML frontmatter and JSON metadata.
 
-## Installation & Setup
+## Setup
 
 ```bash
-# Create virtual environment
+# Initialize virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install GraphIn package
+# Install dependencies
 pip install -e ".[dev]"
 ```
 
-## Quick Start
+## Environment Variables
 
-Run the `graphin` CLI engine on the STEM Markdown Processor example:
+Copy `.env.example` to `.env` and set your API keys:
 
 ```bash
-graphin process --manifest examples/stem_markdown_processor/stem_markdown_processor.graphin.yaml --source-dir examples/stem_markdown_processor/data/source --output-dir examples/stem_markdown_processor/data/results
+cp .env.example .env
 ```
 
-## Running Tests
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+OLLAMA_API_KEY=your_ollama_api_key_here
+OLLAMA_BASE_URL=http://localhost:11434
+```
 
-Run the test suite:
+## Usage
+
+Run the graph processor on the source directory:
 
 ```bash
-pytest tests/ -v
+mac-graph process --source-dir data/source --output-dir data/results --confidence-threshold 0.75 --provider gemini
+```
+
+Or run with Ollama:
+
+```bash
+mac-graph process --provider ollama --ollama-model llama3.1
 ```

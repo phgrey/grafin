@@ -2,6 +2,13 @@ from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 
 
+class ScheduleDefinition(BaseModel):
+    cron: Optional[str] = Field(default=None, description="Standard 5-field cron expression (e.g., '0 0 * * *')")
+    interval_seconds: Optional[int] = Field(default=None, description="Interval in seconds for periodic execution")
+    one_time: bool = Field(default=False, description="True if task should execute once and be removed from crontab")
+    enabled: bool = Field(default=True, description="Active toggle for scheduled task execution")
+
+
 class ModelDefinition(BaseModel):
     id: str = Field(..., description="Unique model alias/identifier in manifest")
     provider: str = Field(..., description="LLM provider: 'gemini', 'ollama', 'huggingface', 'openai'")
@@ -17,6 +24,7 @@ class NodeDefinition(BaseModel):
     type: str = Field(default="function", description="Node type: 'function', 'agent', 'tool', 'interrupt'")
     code_ref: str = Field(..., description="Python dot-notation code reference (e.g. module.path:function_name)")
     description: Optional[str] = Field(default="", description="Human readable node description")
+    schedule: Optional[ScheduleDefinition] = Field(default=None, description="Crontab or periodic trigger schedule definition")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Framework-specific metadata")
 
 

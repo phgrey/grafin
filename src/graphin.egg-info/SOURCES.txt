@@ -23,7 +23,10 @@ src/graphin/hitl/dispatcher.py
 src/graphin/manifest/__init__.py
 src/graphin/manifest/loader.py
 src/graphin/manifest/schema.py
+src/graphin/nodes/__init__.py
+src/graphin/nodes/human_review.py
 tests/test_adapters.py
 tests/test_hitl_cards.py
 tests/test_manifest.py
+tests/test_models.py
 tests/test_stem_example.py
