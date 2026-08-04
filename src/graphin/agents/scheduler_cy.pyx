@@ -1,25 +1,27 @@
+# cython: language_level=3
 import time
 import uuid
-from typing import Dict, Any, List, Optional
-from graphin.manifest.schema import GraphManifest, NodeDefinition, ScheduleDefinition
 
-
-class PurePythonCrontabScheduler:
-    """Pure Python Crontab Scheduler fallback implementation."""
+cdef class CythonCrontabScheduler:
+    """Cython-accelerated Crontab Scheduler for GraphIn performance task queuing and state operations."""
+    
+    cdef public dict _tasks
+    cdef public dict _checkpoints
 
     def __init__(self):
-        self._tasks: Dict[str, Dict[str, Any]] = {}
-        self._checkpoints: Dict[str, Dict[str, Any]] = {}
+        self._tasks = {}
+        self._checkpoints = {}
 
     def register_task(
         self,
-        node_id: str,
-        schedule: ScheduleDefinition,
-        thread_id: str = "default_thread",
-        initial_state_update: Optional[Dict[str, Any]] = None,
+        str node_id,
+        object schedule,
+        str thread_id="default_thread",
+        object initial_state_update=None,
     ) -> str:
-        """Register a node schedule into the crontab queue."""
-        task_id = f"task_{uuid.uuid4().hex[:8]}"
+        """Register a node schedule into the Cython crontab queue."""
+        cdef str task_id = f"task_cy_{uuid.uuid4().hex[:8]}"
+        cdef double now = time.time()
 
         task_entry = {
             "task_id": task_id,
@@ -28,12 +30,12 @@ class PurePythonCrontabScheduler:
             "interval_seconds": getattr(schedule, "interval_seconds", None),
             "one_time": getattr(schedule, "one_time", False),
             "enabled": getattr(schedule, "enabled", True),
-            "created_at": time.time(),
+            "created_at": now,
             "last_executed_at": None,
             "status": "scheduled",
             "thread_id": thread_id,
             "state_update": initial_state_update or {},
-            "engine": "python",
+            "engine": "cython",
         }
         self._tasks[task_id] = task_entry
 
@@ -43,17 +45,17 @@ class PurePythonCrontabScheduler:
         self._checkpoints[thread_id]["scheduled_tasks"].append(task_id)
         return task_id
 
-    def get_task(self, task_id: str) -> Optional[Dict[str, Any]]:
+    def get_task(self, str task_id):
         """Retrieve scheduled task details."""
         return self._tasks.get(task_id)
 
-    def list_tasks(self, thread_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def list_tasks(self, object thread_id=None):
         """List all active crontab tasks."""
         if thread_id:
             return [t for t in self._tasks.values() if t["thread_id"] == thread_id]
         return list(self._tasks.values())
 
-    def cancel_task(self, task_id: str) -> bool:
+    def cancel_task(self, str task_id) -> bool:
         """Cancel a scheduled crontab task."""
         if task_id in self._tasks:
             self._tasks[task_id]["enabled"] = False
@@ -61,9 +63,11 @@ class PurePythonCrontabScheduler:
             return True
         return False
 
-    def execute_trigger(self, task_id: str, current_state: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Execute a scheduled trigger, performing state update & checkpointing."""
-        task = self._tasks.get(task_id)
+    def execute_trigger(self, str task_id, object current_state=None):
+        """Execute a scheduled trigger with Cython acceleration, updating state & checkpoint."""
+        cdef dict task = self._tasks.get(task_id)
+        cdef double now = time.time()
+
         if not task or not task["enabled"]:
             return {"status": "error", "message": f"Task '{task_id}' not found or disabled."}
 
@@ -72,39 +76,30 @@ class PurePythonCrontabScheduler:
         state["last_scheduled_execution"] = {
             "task_id": task_id,
             "node_id": task["node_id"],
-            "timestamp": time.time(),
-            "engine": "python",
+            "timestamp": now,
+            "engine": "cython",
         }
 
-        task["last_executed_at"] = time.time()
+        task["last_executed_at"] = now
         task["status"] = "executed"
 
         if task["one_time"]:
             task["enabled"] = False
             task["status"] = "completed"
 
-        thread_id = task["thread_id"]
+        cdef str thread_id = task["thread_id"]
         if thread_id in self._checkpoints:
             self._checkpoints[thread_id]["last_state"] = state
-            self._checkpoints[thread_id]["last_execution_time"] = time.time()
+            self._checkpoints[thread_id]["last_execution_time"] = now
 
         return {
             "status": "success",
             "task_id": task_id,
             "node_id": task["node_id"],
             "updated_state": state,
-            "engine": "python",
+            "engine": "cython",
         }
 
-    def get_checkpoint_state(self, thread_id: str) -> Dict[str, Any]:
+    def get_checkpoint_state(self, str thread_id):
         """Retrieve checkpoint state data for a thread."""
         return self._checkpoints.get(thread_id, {})
-
-
-# Attempt to load Cython-accelerated CrontabScheduler, fall back seamlessly to PurePythonCrontabScheduler
-try:
-    from graphin.agents.scheduler_cy import CythonCrontabScheduler as CrontabScheduler
-    CYTHON_AVAILABLE = True
-except ImportError:
-    CrontabScheduler = PurePythonCrontabScheduler  # type: ignore
-    CYTHON_AVAILABLE = False

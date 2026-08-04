@@ -1,0 +1,113 @@
+version: 0.1.0
+metadata:
+  name: scrum_life_assistant
+  description: Multi-Agent SCRUM & Life Assistant Graph with Embedded STEM Sub-Graph
+  author: graphin team
+models:
+- id: gemini_flash
+  provider: gemini
+  model_name: gemini-1.5-flash
+  protocol: https
+  api_key_env: GEMINI_API_KEY
+  parameters: {}
+- id: local_ollama
+  provider: ollama
+  model_name: llama3.1
+  protocol: https
+  endpoint: http://localhost:11434
+  parameters: {}
+connections:
+- id: sprint_db
+  type: mysql
+  endpoint: localhost:3306
+  credentials_env: DB_PASS
+  options: {}
+- id: dev_pipe
+  type: unix_socket
+  endpoint: /tmp/grafin_scrum.sock
+  options: {}
+workspace:
+  devcontainers:
+  - .devcontainer/devcontainer.json
+  docker_containers:
+  - scrum_logger
+  local_cloud_models:
+    primary: gemini-1.5-flash
+state_schema: {}
+nodes:
+- id: sprint_planner
+  type: function
+  code_ref: examples.scrum_life_assistant.nodes.sprint_planner:sprint_planner_node
+  description: SCRUM backlog planner
+  metadata: {}
+- id: github_flow
+  type: agent
+  code_ref: graphin.agents.github_agent:github_agent_node
+  description: GitHub Agent managing feature branches & PRs
+  metadata: {}
+- id: cv_refiner
+  type: function
+  code_ref: examples.scrum_life_assistant.nodes.cv_refiner:cv_refiner_node
+  description: Refines developer resume
+  metadata: {}
+- id: budget_auditor
+  type: function
+  code_ref: examples.scrum_life_assistant.nodes.budget_auditor:budget_auditor_node
+  description: Audits expense budgets
+  metadata: {}
+- id: stem_subgraph
+  type: subgraph
+  code_ref: examples.scrum_life_assistant.nodes.stem_subgraph_node:stem_processor_subgraph_node
+  description: 'Recurring STEM Markdown Processor sub-workflow (Example #1)'
+  schedule:
+    cron: 0 1 * * *
+    interval_seconds: 86400
+    one_time: false
+    enabled: true
+  metadata: {}
+- id: life_scheduler
+  type: function
+  code_ref: examples.scrum_life_assistant.nodes.life_scheduler:life_scheduler_node
+  description: Schedules doctor appointments & side tasks
+  schedule:
+    cron: 0 9 * * *
+    one_time: true
+    enabled: true
+  metadata: {}
+- id: pr_code_review
+  type: agent
+  code_ref: examples.scrum_life_assistant.nodes:audit
+  description: ''
+  metadata: {}
+edges:
+- source: __start__
+  target: sprint_planner
+- source: sprint_planner
+  target: github_flow
+- source: github_flow
+  target: cv_refiner
+- source: cv_refiner
+  target: budget_auditor
+- source: budget_auditor
+  target: stem_subgraph
+- source: stem_subgraph
+  target: life_scheduler
+- source: life_scheduler
+  target: __end__
+framework_configs:
+  langgraph:
+    checkpointer: MemorySaver
+  crewai:
+    verbose: true
+    process: hierarchical
+    manager_llm: gemini-1.5-flash
+    acl_policy: admin_only_node_deletion
+    specialists:
+    - ResumeAuditor
+    - FinancialAuditor
+    - GitHubPRReviewer
+  semantic_kernel:
+    service_id: default_sk_service
+    plugins:
+    - GraphManipulationPlugin
+    - GitHubComparisonPlugin

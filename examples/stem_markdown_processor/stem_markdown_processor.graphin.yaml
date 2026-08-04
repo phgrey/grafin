@@ -28,6 +28,7 @@ models:
   api_key_env: HUGGINGFACE_API_KEY
   parameters:
     temperature: 0.1
+connections: []
 default_model_ref: gemini_flash
 state_schema: {}
 nodes:
@@ -56,11 +57,6 @@ nodes:
   code_ref: examples.stem_markdown_processor.nodes.result_saver:save_results_node
   description: Exports tagged results
   metadata: {}
-- id: quality_audit
-  type: agent
-  code_ref: examples.stem_markdown_processor.nodes:audit
-  description: ''
-  metadata: {}
 edges:
 - source: __start__
   target: load_documents
@@ -83,12 +79,3 @@ edges:
 framework_configs:
   langgraph:
     checkpointer: MemorySaver
-  crewai:
-    verbose: true
-    process: hierarchical
-    manager_llm: gemini-1.5-flash
-    acl_policy: admin_only_node_deletion
-  semantic_kernel:
-    service_id: default_sk_service
-    plugins:
-    - GraphManipulationPlugin

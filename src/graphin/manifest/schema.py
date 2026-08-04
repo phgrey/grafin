@@ -9,6 +9,20 @@ class ScheduleDefinition(BaseModel):
     enabled: bool = Field(default=True, description="Active toggle for scheduled task execution")
 
 
+class ConnectionDefinition(BaseModel):
+    id: str = Field(..., description="Unique connection access point alias/identifier")
+    type: str = Field(..., description="Access point type: 'mysql', 'postgres', 'file_reference', 'unix_socket', 'chat_channel', 'mcp', 'rest'")
+    endpoint: str = Field(..., description="Connection target URL, file path, socket path, or host:port")
+    credentials_env: Optional[str] = Field(default=None, description="Environment variable name for authentication credentials")
+    options: Dict[str, Any] = Field(default_factory=dict, description="Connection-specific options and parameters")
+
+
+class WorkspaceConfig(BaseModel):
+    devcontainers: List[str] = Field(default_factory=list, description="Devcontainer configuration paths or names")
+    docker_containers: List[str] = Field(default_factory=list, description="Utility/logging container identifiers")
+    local_cloud_models: Dict[str, str] = Field(default_factory=dict, description="Mapping of model aliases to local/cloud deployment targets")
+
+
 class ModelDefinition(BaseModel):
     id: str = Field(..., description="Unique model alias/identifier in manifest")
     provider: str = Field(..., description="LLM provider: 'gemini', 'ollama', 'huggingface', 'openai'")
@@ -43,6 +57,8 @@ class GraphManifest(BaseModel):
     version: str = Field(default="0.1.0", description="GraphInYAML format version")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Graph metadata (name, description, author)")
     models: List[ModelDefinition] = Field(default_factory=list, description="Centralized LLM model connection definitions")
+    connections: List[ConnectionDefinition] = Field(default_factory=list, description="Shared connection access points (DB, sockets, MCP, REST)")
+    workspace: Optional[WorkspaceConfig] = Field(default=None, description="Devcontainers and workspace environment configurations")
     default_model_ref: Optional[str] = Field(default=None, description="ID of default model to use")
     state_schema: Dict[str, Any] = Field(default_factory=dict, description="JSON Schema for graph state")
     nodes: List[NodeDefinition] = Field(default_factory=list, description="List of node definitions")
@@ -56,6 +72,13 @@ class GraphManifest(BaseModel):
         for m in self.models:
             if m.id == model_id:
                 return m
+        return None
+
+    def get_connection(self, connection_id: str) -> Optional[ConnectionDefinition]:
+        """Find a connection definition by its ID."""
+        for c in self.connections:
+            if c.id == connection_id:
+                return c
         return None
 
     def get_node(self, node_id: str) -> Optional[NodeDefinition]:
