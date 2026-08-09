@@ -34,6 +34,10 @@ result - working plan given to python dev/agent.
 No graph skills, simple graph, single language, no real cooperating - good example #1.
 
 ### 2 the same, but a bit deeper
+> Use NeMo Agent Toolkit if you are deploying to production and need unified OpenTelemetry tracing across multiple distinct frameworks (like LangChain or CrewAI) running on top of NVIDIA NIM infrastructure.
+
+
+
 Adding skillset level for operating on common graph. Experiment's useful artifacts - add to codebase.
 complex constant langraph (idea realiser - SCRUM-based + few incident-related tasks + side one-time tasks - doctor appointment, cv refine, learning plan, budjet, etc.) 
 
