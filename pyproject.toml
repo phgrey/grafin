@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "graphin"
-version = "0.0.1-experiment"
+version = "0.0.1"
 description = "GraphIn: Manifest-driven execution graph engine supporting LangGraph, CrewAI, and Semantic Kernel"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
     "langgraph>=0.2.0",
     "langchain-core>=0.3.0",
@@ -18,6 +18,10 @@ dependencies = [
     "rich>=13.0.0",
     "pyyaml>=6.0",
     "python-dotenv>=1.0.0",
+    "langfuse>=4.14.4",
+    "deepagents>=0.7.8",
+    "langchain-openrouter>=0.2.8",
+    "tavily>=1.1.0",
 ]
 
 [project.optional-dependencies]

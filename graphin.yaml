@@ -42,6 +42,11 @@ state_schema:
 nodes: []
 edges: []
 
+connections:
+  - id: "cordis_ipc_pipe"
+    type: "unix_socket"
+    endpoint: "/tmp/grafin_cordis.sock"
+
 framework_configs:
   langgraph:
     checkpointer: "MemorySaver"
@@ -49,3 +54,8 @@ framework_configs:
     verbose: true
   semantic_kernel:
     service_id: "default"
+  cordis:
+    microkernel_mode: "hybrid"
+    ipc_endpoint: "/tmp/grafin_cordis.sock"
+    vendor_harness_path: "/Users/ssemenov/work/harness/deepseek-harness/vendor/cordis"
+

@@ -1,0 +1,8 @@
+{
+  "updatedAt": "2026-08-22T00:29:02.200Z",
+  "command": "init",
+  "gitHead": "b85fb3107aa87d95d4d10dfcdeff966a8796fdc9",
+  "model": "google/gemma-4-31b-it",
+  "status": "interrupted",
+  "language": "en"
+}

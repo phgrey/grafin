@@ -1,63 +1,129 @@
 Metadata-Version: 2.4
 Name: graphin
-Version: 0.1.0
+Version: 0.0.1
 Summary: GraphIn: Manifest-driven execution graph engine supporting LangGraph, CrewAI, and Semantic Kernel
-Requires-Python: >=3.9
+Requires-Python: >=3.11
 Description-Content-Type: text/markdown
 Requires-Dist: langgraph>=0.2.0
 Requires-Dist: langchain-core>=0.3.0
 Requires-Dist: langchain-google-genai>=2.0.0
 Requires-Dist: langchain-ollama>=0.2.0
-Requires-Dist: langchain-huggingface>=0.1.0
-Requires-Dist: huggingface_hub>=0.20.0
 Requires-Dist: pydantic>=2.0.0
 Requires-Dist: typer>=0.12.0
 Requires-Dist: rich>=13.0.0
 Requires-Dist: pyyaml>=6.0
 Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: langfuse>=4.14.4
+Requires-Dist: deepagents>=0.7.8
+Requires-Dist: langchain-openrouter>=0.2.8
+Requires-Dist: tavily>=1.1.0
 Provides-Extra: dev
 Requires-Dist: pytest>=8.0.0; extra == "dev"
 Requires-Dist: pytest-asyncio>=0.23.0; extra == "dev"
 
-# GraphIn
+# Grafin (GraphIn)
 
-**GraphIn** is a framework-agnostic, manifest-driven execution graph engine for building, running, and managing AI agent workflows across **LangGraph**, **CrewAI**, and **Semantic Kernel** (Python).
+**Grafin** is the **Coordinator of Coordinators** — a framework-agnostic, manifest-driven workspace and orchestration protocol connecting **LangGraph**, **CrewAI**, and **Semantic Kernel** into a unified multi-framework ecosystem.
 
-Graph workflows are defined in the **`GraphInYAML`** format (`graphin.yaml` or `*.graphin.yaml`).
+Grafin bridges orchestrators by using **`GraphInYAML`** (`graphin.yaml` / `*.graphin.yaml`) as the single source of truth for graph topologies, models, shared connection access points, skillsets, and devcontainers.
 
-## Features
+---
 
-- **`GraphInYAML` Format**: Declarative YAML manifest specification (`graphin.yaml`) serving as the single source of truth for graph topology, nodes (`code_ref`), edges, state schema, and framework settings.
-- **Multi-Framework Adapters**:
-  - **LangGraph Adapter**: Executable build engine & graph exporter ("Graph Frontend").
-  - **CrewAI Adapter**: Exposes graph node/edge manipulation tools (`CrewAIGraphManipulationTool`) with support for CrewAI **Hooks** and Access Control Lists (ACL) ("Graph Frontend+").
-  - **Semantic Kernel Adapter**: Exposes graph manipulation plugins (`GraphManipulationPlugin`) with **Function Execution Filters** ("Graph Backend").
-  - **GraphInYAML Adapter**: Native manifest loader and serializer.
-- **Centralized HITL & Adaptive Cards**: Captures graph execution interrupts and formats them into Microsoft **Adaptive Cards** v1.4 JSON payloads for user interaction in chat channels.
-- **Modular Examples**: Example workflows (such as the STEM Markdown Processor) are isolated in `examples/`.
+## Core Capabilities
 
-## Installation & Setup
+- **Coordinator of Coordinators**: Single unified protocol enabling seamless translation and execution across:
+  - **LangGraph**: Compiled `StateGraph` workflows ("Graph Frontend").
+  - **CrewAI**: Task execution, agent roles, and ACL hooks ("Graph Frontend+").
+  - **Semantic Kernel**: AI service registries, plugins, and execution filters ("Graph Backend").
+  - **GraphInYAML**: Declarative YAML manifest specification.
+- **Shared Connections & Access Points**: Connects nodes to shared resources:
+  - Relational & NoSQL Databases (e.g. MySQL, PostgreSQL).
+  - Inter-Process Communication (Unix domain sockets, TCP pipes, file references).
+  - Chat channels & Adaptive Card HITL dispatchers.
+  - Model / MCP / REST endpoints.
+- **Graph Skillsets**: Standardized skill-sharing protocol for inspecting, walking, and mutating graph topology and state across all frameworks.
+- **Crontab-Based Schedule Agents**: Autonomous schedule agents (**`GraphinReaderAgent`** and **`GraphinWriterAgent`**) powered by Google Antigravity (AGY) SDK for walking graphs and executing crontab background tasks.
+- **Developer Workspace & Devcontainers**: Integrated devcontainer environment configurations (`workspace`, `environment`, `devcontainers`) for local and cloud workflows.
+
+---
+
+## `GraphInYAML` Manifest Architecture
+
+A `graphin.yaml` manifest configures all models, nodes, edges, shared connections, and framework settings:
+
+```yaml
+version: "0.1.0"
+metadata:
+  name: "grafin_core_workflow"
+  description: "Grafin Coordinator of Coordinators Workflow"
+
+models:
+  - id: "gemini_flash"
+    provider: "gemini"
+    model_name: "gemini-1.5-flash"
+    api_key_env: "GEMINI_API_KEY"
+
+connections:
+  - id: "main_database"
+    type: "mysql"
+    endpoint: "localhost:3306"
+    credentials_env: "DB_PASSWORD"
+
+  - id: "local_pipe"
+    type: "unix_socket"
+    endpoint: "/tmp/grafin.sock"
+
+nodes:
+  - id: "stem_classifier"
+    type: "function"
+    code_ref: "examples.stem_markdown_processor.nodes.stem_classifier:stem_classifier_node"
+    schedule:
+      cron: "0 0 * * *"
+      one_time: false
+      enabled: true
+
+edges:
+  - source: "__start__"
+    target: "stem_classifier"
+```
+
+---
+
+## Quick Start
+
+### Installation
 
 ```bash
+# Clone and enter directory
+cd valiant-kepler
+
 # Create virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install GraphIn package
+# Install Grafin package in editable mode
 pip install -e ".[dev]"
 ```
 
-## Quick Start
+### CLI Engine Execution
 
-Run the `graphin` CLI engine on the STEM Markdown Processor example:
+Run the Grafin CLI processor on an example manifest:
 
 ```bash
-graphin process --manifest examples/stem_markdown_processor/stem_markdown_processor.graphin.yaml --source-dir examples/stem_markdown_processor/data/source --output-dir examples/stem_markdown_processor/data/results
+graphin process --manifest examples/stem_markdown_processor/stem_markdown_processor.graphin.yaml
 ```
 
-## Running Tests
+### Single Orchestrator Experiment
 
-Run the test suite:
+Run all 4 phases of the multi-framework experiment (LangGraph -> CrewAI -> Semantic Kernel -> Schedule Agents):
+
+```bash
+python examples/stem_markdown_processor/run_experiment.py
+```
+
+### Running Tests
+
+Execute the 100% offline automated unit test suite:
 
 ```bash
 pytest tests/ -v

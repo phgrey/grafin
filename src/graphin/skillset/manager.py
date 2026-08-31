@@ -57,3 +57,25 @@ class SkillsetManager:
     def list_skillsets(self) -> List[str]:
         """List registered skillset names."""
         return list(self._skillsets.keys())
+
+
+try:
+    from graphin.cordis.context import Context, Service
+
+    class CordisSkillsetService(Service):
+        """Cordis Service exposing Grafin Skillsets to microkernel plugins."""
+
+        service_name = "skillset"
+
+        def __init__(self, ctx: Context, manager: Optional[SkillsetManager] = None):
+            self.manager = manager or SkillsetManager()
+            super().__init__(ctx, name=self.service_name)
+
+        def walk(self, manifest: GraphManifest, skillset_name: str = "standard_graph_skillset") -> Dict[str, Any]:
+            skillset = self.manager.get_skillset(skillset_name)
+            if not skillset:
+                raise ValueError(f"Skillset '{skillset_name}' not registered.")
+            return skillset.walk_topology(manifest)
+except ImportError:
+    pass
+

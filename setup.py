@@ -3,9 +3,13 @@ from setuptools import setup, find_packages
 
 try:
     from Cython.Build import cythonize
-    ext_modules = cythonize("src/graphin/agents/scheduler_cy.pyx", compiler_directives={"language_level": "3"})
+    ext_modules = cythonize(
+        ["src/graphin/agents/scheduler_cy.pyx", "src/graphin/cordis/cython_speedup.pyx"],
+        compiler_directives={"language_level": "3"}
+    )
 except ImportError:
     ext_modules = []
+
 
 setup(
     name="graphin",

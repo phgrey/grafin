@@ -105,3 +105,17 @@ Execute the 100% offline automated unit test suite:
 ```bash
 pytest tests/ -v
 ```
+
+We've been recommended by jurist to categorically reject all the deductions you are attempting to charge against the deposit
+
+First - we have to ask for a copy AVRA deposit confirmation.
+
+Abouth the list:
+ - Humidity and painting: Under Article 21 of the Spanish Urban Tenancy Act (Ley de Arrendamientos Urbanos - LAU) and established jurisprudence, structural humidity, condensation, and general preservation of the property are the exclusive responsibility of the landlord (obras de conservación). They are not attributable to the tenant and cannot legally be deducted from the security deposit.
+ - Personal living expenses and temporary accommodation: Charging us for 2 months of your personal temporary studio rent has zero legal basis and violates the legal purpose and definition of a rental deposit.
+ - Normal wear and tear & breakdowns: Pursuant to Articles 1561 and 1562 of the Spanish Civil Code (Código Civil), tenants are not liable for deteriorations caused by ordinary use, the passage of time, or routine maintenance of fixtures/appliances (doorknobs, AC, fridge, boiler). Furthermore, you explicitly acknowledge that certain damages occurred weeks after the keys were returned.
+ - Cleaning: The apartment was returned clean and in proper condition, as documented in our exit photo report.
+- AC was broken by the start - it had elecricity problem we've discussed in whatsup. Sofa was broken as well.
+
+We also discovered violations of the LAU law on your part, so we believe we have the right to challenge your decision all the way to court. There's some sort of simplified procedure there.
+ 
